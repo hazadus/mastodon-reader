@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
-          uv run masto_feed.py --date "$YESTERDAY" --markdown > "feeds/${YESTERDAY}.md"
+          uv run masto_feed.py "$YESTERDAY" --markdown > "feeds/${YESTERDAY}.md"
 
       - name: Commit and push
         shell: bash
