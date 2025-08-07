@@ -1,0 +1,59 @@
+name: Публикация ленты Mastodon
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *" # At 06:00 UTC every day
+
+permissions:
+  contents: write
+
+jobs:
+  publish-feed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Prepare workspace
+        run: |
+          mkdir -p feeds
+
+      - name: Save Mastodon credentials
+        run: |
+          echo "${{ secrets.TOOT_USERCRED_SECRET }}" > toot_usercred.secret
+          chmod 600 toot_usercred.secret
+
+      - name: Download masto_feed.py
+        run: |
+          curl -fsSL -o masto_feed.py https://raw.githubusercontent.com/hazadus/my-scripts/main/scripts/masto_feed.py
+
+      - name: Run masto_feed.py and save markdown
+        shell: bash
+        run: |
+          YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
+          uv run masto_feed.py --date "$YESTERDAY" --markdown > "feeds/${YESTERDAY}.md"
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "Automated"
+          git config user.email "actions@users.noreply.github.com"
+          YESTERDAY=$(date -u -d "yesterday" +%Y-%m-%d)
+          git add "feeds/${YESTERDAY}.md"
+          timestamp=$(date -u)
+          git commit -m "Новая лента Mastodon за ${YESTERDAY} (сгенерировано ${timestamp})" || exit 0
+          git pull --rebase
+          git push
+
+
