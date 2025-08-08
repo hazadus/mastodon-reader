@@ -3,7 +3,7 @@ name: Публикация ленты Mastodon
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *" # At 06:00 UTC every day
+    - cron: "0 4 * * *" # At 04:00 UTC every day
 
 permissions:
   contents: write
